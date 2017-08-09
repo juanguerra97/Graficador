@@ -6,7 +6,10 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Line2D;
+
 import javax.swing.JPanel;
+
+import graficador.expresion_algebraica.Expresion;
 
 // JPanel donde se dibuja la gráfica
 public class Grafica extends JPanel {
@@ -16,14 +19,18 @@ public class Grafica extends JPanel {
 	public static final Color FONDO = new Color(33.0f/255,33.0f/255,33.0f/255);
 	public static final Color EJES = new Color(96.0f/255,125.0f/255,139.0f/255);
 	public static final Color LINEAS = new Color(96.0f/255,125.0f/255,139.0f/255, 0.05f);
+	public static final Color GRAFICA = new Color(255.0f/255,87.0f/255,34.0f/255);
 	
 	private int escala;
+	private String funcion;
+	private Expresion funcionPostFija;
 	
 	// constructor
 	public Grafica() {
 		setBackground(FONDO);
 		escala = 20;
-		
+		funcion = null;
+		funcionPostFija = null;
 		addMouseWheelListener(new MouseWheelListener() {
 
 			@Override
@@ -41,6 +48,21 @@ public class Grafica extends JPanel {
 				}
 			}
 		});
+	}
+	
+	// método para establecer la expresion de la funcion a graficar
+	public void setFuncion(String funcion) throws IllegalArgumentException {
+		boolean valido = Expresion.valida(funcion);
+		if(valido) {
+			this.funcion = funcion;
+			funcionPostFija = Expresion.postFija(funcion);
+			updateUI();
+		}else {
+			this.funcion = null;
+			this.funcionPostFija = null;
+			updateUI();
+			throw new IllegalArgumentException("Función inválida");
+		}
 	}
 	
 	// método para establecer la escala
@@ -111,7 +133,28 @@ public class Grafica extends JPanel {
 	
 	// método que dibuja la gráfica de una función
 	public void graficar(Graphics2D g) {
-		
+		if(funcion != null && funcionPostFija != null) {
+			int mitadAncho = getWidth() / 2;
+			int mitadAlto = getHeight() / 2;
+			Line2D.Double linea = new Line2D.Double();
+			double x2, y2;
+			g.setColor(GRAFICA);
+			for(double X = -(mitadAlto / escala) - 0.01; X <= mitadAncho; X+=0.01) {
+				try {
+					double Y = funcionPostFija.evalua(X);
+					x2 = X+0.01;
+					y2 = funcionPostFija.evalua(x2);
+					if((Y <= (mitadAlto / escala + 100) && Y >= -(mitadAlto / escala)) && (y2 <=  (mitadAlto / escala + 100) && y2 >= -(mitadAlto / escala + 10))) {
+						linea.x1 = X * escala;
+						linea.y1 = -(Y * escala);
+						linea.x2 = x2 * escala;
+						linea.y2 = -(y2 * escala);
+						g.draw(linea);
+					}
+				}catch(Exception e) {}
+			}
+			
+		}
 	}
 
 }
